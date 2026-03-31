@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FDP Wissensquiz – JuLis Leipzig</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:1rem}
+  #quiz-wrap{max-width:680px;margin:0 auto;padding:1rem 0}
+  .header-tag{font-size:11px;color:#185FA5;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
+  .header-title{font-size:22px;font-weight:700;margin-bottom:4px;color:#111}
+  .header-sub{font-size:13px;color:#666;margin-bottom:1.5rem}
+  #progress-bar-wrap{height:4px;background:#eee;border-radius:2px;margin-bottom:1.5rem}
+  #progress-bar{height:4px;background:#FFED00;border-radius:2px;transition:width 0.4s}
+  .q-num{font-size:12px;color:#999;margin-bottom:4px}
+  .q-text{font-size:15px;font-weight:700;color:#111;margin-bottom:12px;line-height:1.5}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:14px;color:#111;transition:background 0.15s}
+  .opt:hover{background:#f9f9f9}
+  .opt.selected{border-color:#185FA5;background:#E6F1FB;color:#0C447C}
+  #btn-wrap{margin-top:1.5rem;display:flex;justify-content:flex-end}
+  #nav-btn{padding:10px 24px;border:1px solid #185FA5;border-radius:8px;background:#185FA5;cursor:pointer;font-size:14px;color:#fff;font-weight:bold}
+  #nav-btn:disabled{background:#ccc;border-color:#ccc;cursor:not-allowed}
+  #result-block{display:none;text-align:center;padding:2rem 0}
+  .result-badge{display:inline-block;padding:6px 16px;border-radius:8px;font-size:12px;font-weight:700;margin-bottom:12px;background:#FFED00;color:#185FA5}
+  .result-title{font-size:24px;font-weight:900;margin-bottom:8px;color:#111;text-transform:uppercase}
+  .score-display{font-size:48px;font-weight:900;margin-bottom:4px;color:#185FA5}
+  .score-label{font-size:14px;color:#888;margin-bottom:1.5rem}
+  #retry-btn{padding:10px 24px;border:1px solid #bbb;border-radius:8px;background:#fff;cursor:pointer;font-size:14px}
+</style>
+</head>
+<body>
+
+<div id="quiz-wrap">
+  <div class="header-tag">JuLis Leipzig</div>
+  <div class="header-title">Das große FDP Wissensquiz</div>
+  <div class="header-sub">Teste dein Wissen über die Freien Demokraten!</div>
+  
+  <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+  
+  <div id="quiz-content">
+    <div id="questions-area"></div>
+    <div id="btn-wrap"><button id="nav-btn" disabled>Weiter</button></div>
+  </div>
+
+  <div id="result-block">
+    <div class="result-badge">Ergebnis</div>
+    <div class="result-title" id="res-title"></div>
+    <div class="score-display" id="res-score">0/15</div>
+    <div class="score-label">Fragen richtig beantwortet</div>
+    <button id="retry-btn" onclick="location.reload()">Quiz neustarten</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {q: "In welchem Jahr wurde die FDP gegründet?", o: ["1945", "1948", "1949", "1950", "1933"], a: 1},
+  {q: "Wo fand der Gründungsparteitag der FDP statt?", o: ["Bonn", "Berlin", "Heppenheim", "Leipzig", "Frankfurt"], a: 2},
+  {q: "Wer war der erste Bundespräsident der Bundesrepublik Deutschland (FDP)?", o: ["Walter Scheel", "Hans-Dietrich Genscher", "Theodor Heuss", "Guido Westerwelle", "Thomas Kemmerich"], a: 2},
+  {q: "Welche Farbe wird traditionell mit der FDP assoziiert?", o: ["Blau", "Grün", "Rot", "Gelb", "Orange"], a: 3},
+  {q: "Wer ist der aktuelle Bundesvorsitzende der FDP (Stand 2024)?", o: ["Wolfgang Kubicki", "Christian Lindner", "Marco Buschmann", "Bijan Djir-Sarai", "Johannes Vogel"], a: 1},
+  {q: "Wie hieß der FDP-Außenminister, der die Entspannungspolitik und die Deutsche Einheit maßgeblich prägte?", o: ["Otto Graf Lambsdorff", "Philipp Rösler", "Hans-Dietrich Genscher", "Klaus Kinkel", "Rainer Brüderle"], a: 2},
+  {q: "Was ist der Name der Jugendorganisation der FDP?", o: ["Junge Liberale (JuLis)", "Jungdemokraten", "FDP-Jugend", "Liberale Schüler", "Junge Freiheit"], a: 0},
+  {q: "Welches Ministerium leitet Christian Lindner im Kabinett Scholz?", o: ["Justiz", "Wirtschaft", "Finanzen", "Verkehr", "Bildung"], a: 2},
+  {q: "Wofür steht die Abkürzung FDP heute offiziell?", o: ["Freie Deutsche Partei", "Freie Demokratische Partei", "Freisinnige Demokratische Partei", "Föderale Deutsche Partei", "Freiheitliche Demokratische Partei"], a: 1},
+  {q: "In welchem Jahr kehrte die FDP nach der außerparlamentarischen Opposition (APO) in den Bundestag zurück?", o: ["2013", "2015", "2017", "2021", "2009"], a: 2},
+  {q: "Welches Programm gilt als der 'sozialliberale' Meilenstein der FDP-Geschichte?", o: ["Wiesbadener Programm", "Freiburger Thesen", "Kieler Programm", "Berliner Programm", "Heppenheimer Manifest"], a: 1},
+  {q: "Wer war der erste Vizekanzler, den die FDP in der Bundesrepublik stellte?", o: ["Franz Blücher", "Walter Scheel", "Guido Westerwelle", "Erich Mende", "Rolf Dahlgrün"], a: 0},
+  {q: "Welche Stiftung steht der FDP nahe?", o: ["Konrad-Adenauer-Stiftung", "Friedrich-Ebert-Stiftung", "Friedrich-Naumann-Stiftung für die Freiheit", "Heinrich-Böll-Stiftung", "Rosa-Luxemburg-Stiftung"], a: 2},
+  {q: "Wie lautete der Slogan der FDP zur Bundestagswahl 2017?", o: ["Freiheit zuerst", "Denken wir neu", "Mehr Netto vom Brutto", "Ganz Deutschland im Blick", "Lieber nicht regieren als falsch regieren"], a: 1},
+  {q: "Wer ist aktuell Generalsekretär der FDP?", o: ["Bijan Djir-Sarai", "Volker Wissing", "Christian Dürr", "Konstantin Kuhle", "Marie-Agnes Strack-Zimmermann"], a: 0}
+];
+
+let currentIdx = 0;
+let score = 0;
+let selectedOpt = null;
+
+const qArea = document.getElementById('questions-area');
+const navBtn = document.getElementById('nav-btn');
+const progBar = document.getElementById('progress-bar');
+
+function render() {
+  const q = questions[currentIdx];
+  selectedOpt = null;
+  navBtn.disabled = true;
+  navBtn.innerText = currentIdx === questions.length - 1 ? "Ergebnis sehen" : "Weiter";
+  
+  let html = `<div class="q-num">Frage ${currentIdx + 1} von ${questions.length}</div>`;
+  html += `<div class="q-text">${q.q}</div><div class="opt-list">`;
+  q.o.forEach((opt, i) => {
+    html += `<div class="opt" onclick="select(${i})">${opt}</div>`;
+  });
+  html += `</div>`;
+  qArea.innerHTML = html;
+  progBar.style.width = `${(currentIdx / questions.length) * 100}%`;
+}
+
+window.select = (i) => {
+  selectedOpt = i;
+  document.querySelectorAll('.opt').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+  navBtn.disabled = false;
+};
+
+navBtn.onclick = () => {
+  if (selectedOpt === questions[currentIdx].a) score++;
+  currentIdx++;
+  if (currentIdx < questions.length) {
+    render();
+  } else {
+    showResult();
+  }
+};
+
+function showResult() {
+  document.getElementById('quiz-content').style.display = 'none';
+  const rb = document.getElementById('result-block');
+  rb.style.display = 'block';
+  progBar.style.width = '100%';
+  document.getElementById('res-score').innerText = `${score}/${questions.length}`;
+  
+  let title = "Oha!";
+  if(score === 15) title = "Vollprofi! Staatssekretär-Niveau!";
+  else if(score > 10) title = "Starke Leistung, Liberaler!";
+  else if(score > 5) title = "Da geht noch was!";
+  else title = "Zeit für ein paar Julis-Stammtische!";
+  document.getElementById('res-title').innerText = title;
+}
+
+render();
+</script>
+</body>
+</html>
